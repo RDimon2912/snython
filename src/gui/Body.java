@@ -1,37 +1,49 @@
 package gui;
 
-import javax.swing.text.html.HTMLDocument;
-import java.awt.*;
-import java.util.ArrayList;
+import java.io.Serializable;
 import java.util.Iterator;
 import java.util.function.Consumer;
 
-public class Body implements Iterable<Point>{
+import strategy.*;
+
+public class Body implements Iterable<Point>, Serializable {
 
     private int count = 0;
-    private Point[] array_of_points;
+    private PointBox head;
+    private PointBox tail;
 
     public Body() {
-        array_of_points = new Point[5];
+        head = null;
+        tail = null;
+        count = 0;
     }
 
     public Point getHead() throws Exception {
         if (count == 0)
             throw new Exception("There is no head");
-        return array_of_points[0];
+        return head.getObject();
     }
 
     public void add(Point point) {
-        if (count == array_of_points.length - 1) {
-            resize(array_of_points.length*2);
+        count ++;
+        PointBox newHead = new PointBox(point);
+        if (head == null) {
+            head = newHead;
+            tail = newHead;
         }
-        array_of_points[count ++] = point;
+        else {
+            head.setObjectNext(newHead);
+            head = newHead;
+        }
     }
 
-    private void resize(int newLength) {
-        Point[] newArray = new Point[newLength];
-        System.arraycopy(array_of_points, 0, newArray, 0, count);
-        array_of_points = newArray;
+    public Point pop() {
+        if (head == null)
+            return null;
+        count --;
+        Point res = tail.getObject();
+        tail = tail.getObjectNext();
+        return res;
     }
 
     public int getCount() {
@@ -41,15 +53,17 @@ public class Body implements Iterable<Point>{
     @Override
     public Iterator<Point> iterator() {
         Iterator<Point> it = new Iterator<Point>() {
-            private int iter = 0;
+            private PointBox iter = tail;
             @Override
             public boolean hasNext() {
-                return iter < count - 1;
+                return iter != null;
             }
 
             @Override
             public Point next() {
-                return array_of_points[iter++];
+                Point res = iter.getObject();
+                iter = iter.getObjectNext();
+                return res;
             }
         };
         return it;
@@ -59,6 +73,32 @@ public class Body implements Iterable<Point>{
     public void forEach(Consumer action) {
         for (Point point : this) {
             action.accept(point);
+        }
+    }
+
+    private class PointBox implements Serializable {
+        private Point object;
+        private PointBox objectNext;
+
+        public PointBox(Point point) {
+            object = point;
+            objectNext = null;
+        }
+
+        public Point getObject() {
+            return object;
+        }
+
+        public void setObject(Point point) {
+            object = point;
+        }
+
+        public PointBox getObjectNext() {
+            return objectNext;
+        }
+
+        public void setObjectNext(PointBox objectNext) {
+            this.objectNext = objectNext;
         }
     }
 }
